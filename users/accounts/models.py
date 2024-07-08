@@ -31,7 +31,7 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractBaseUser):
     class Roles(models.TextChoices):
-        USER = 'User'
+        USER = 'user'
         SHOPOWNER = 'shop owner'
     email = models.EmailField(verbose_name='email address', max_length=255, unique=True)
     username = models.CharField(max_length=255, unique=True)
