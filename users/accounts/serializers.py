@@ -2,15 +2,22 @@ from rest_framework import serializers
 from .models import CustomUser
 
 class UserSerializer(serializers.ModelSerializer):
-    password1 = serializers.CharField(write_only=True)
-    password2 = serializers.CharField(write_only=True)
+    password1 = serializers.CharField(write_only=True,required=False)
+    password2 = serializers.CharField(write_only=True,required=False)
+
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'username', 'role', 'password1','password2']
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'email': {'required': False},  # Allow email to be optional
+        }
 
     def validate(self, data):
-        if data['password1'] != data['password2']:
+        password1 = data.get('password1')
+        password2 = data.get('password2')
+
+        if password1 != password2:
             raise serializers.ValidationError("Passwords do not match.")
         return data
     
@@ -28,8 +35,10 @@ class UserSerializer(serializers.ModelSerializer):
         instance.email = validated_data.get('email', instance.email)
         instance.username = validated_data.get('username', instance.username)
         instance.role = validated_data.get('role', instance.role)
+
         password = validated_data.get('password1')
         if password:
             instance.set_password(password)
+
         instance.save()
         return instance

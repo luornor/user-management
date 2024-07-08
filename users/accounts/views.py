@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import CustomUser
 from .serializers import UserSerializer
-import jwt
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.urls import reverse_lazy
@@ -37,14 +37,25 @@ class RegisterView(generics.CreateAPIView):
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     lookup_field = 'id'
 
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
+    def put(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
-class LoginView(APIView):
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"message": "User Deleted successfully."},status=status.HTTP_204_NO_CONTENT)
+
+class LoginView(TokenObtainPairView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
@@ -55,15 +66,14 @@ class LoginView(APIView):
 
         user = authenticate(email=email, password=password)
         if user:
-            payload = {'user_id': user.id, 'email': user.email}
-            token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+            token = super().post(request, *args, **kwargs)
             return Response({
                 "message": "Login successful. Token generated successfully.",
                 "user_id": user.id,
                 "username": user.username,
                 "email": user.email,
                 "role": user.role,
-                "token": token
+                "token": token.data['access']
             }, status=status.HTTP_200_OK)
         else:
             return Response({"message": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
