@@ -90,7 +90,7 @@ class LoginView(TokenObtainPairView):
             },
             required=['email', 'password'],
         ),
-        responses={200: openapi.Response('Login successful. Token generated successfully.', UserSerializer(),schema=openapi.Schema(type=openapi.TYPE_OBJECT))},
+        responses={200: openapi.Response('Login successful. Token generated successfully.',UserSerializer())},
     )
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
