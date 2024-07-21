@@ -10,6 +10,7 @@ from django.contrib.auth import authenticate
 from django.urls import reverse_lazy
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from .tasks import create_shop
 
 class RootAPIView(APIView):
     permission_classes = [AllowAny]
@@ -62,10 +63,20 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+        user_data = serializer.data
+        # Check if the user role is shop_owner
+        
+        if user_data.get('role') == 'shop owner':
+            message = {
+                "user_data": user_data,
+            }
+
+            create_shop.delay(message)
+            
         return Response(
             {
                 "message": "User created successfully. You can login now",
-                "data": serializer.data
+                "data": user_data
             },
             status=status.HTTP_201_CREATED,
             headers=headers

@@ -43,10 +43,18 @@ INSTALLED_APPS = [
     'accounts',
     'rest_framework',
     'rest_framework_simplejwt',
-    'drf_yasg'
+    'drf_yasg',
+    'django_celery_results',
+    'corsheaders',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:8000",
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -145,3 +153,27 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Celery settings
+CELERY_BROKER_URL = config('CLOUD_AMQP_URL', default='amqp://guest:guest@localhost:5672//')
+CELERY_RESULT_BACKEND = 'rpc://'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+from kombu import Exchange,Queue
+
+CELERY_TASK_QUEUES = (
+    Queue('listing_queue', Exchange('listing_exchange', type='topic'),
+           routing_key='shop.created',
+           queue_arguments={
+            'x-queue-type': 'classic'
+         },
+         durable=True),
+)
+
+# settings.py
+CELERY_TASK_ROUTES = {
+    'accounts.tasks.create_shop': {'queue': 'listing_queue', 'routing_key': 'shop.created'},
+}
