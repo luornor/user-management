@@ -22,8 +22,8 @@ Communicate with listings api to create a shop
 
 1. **Clone the repository:**
 
-   git clone https://github.com/luornor/api-gateway.git
-   cd api-gateway
+   git clone https://github.com/luornor/user-management.git
+   cd user-management
    
 ## Create a virtual environment:
 
